@@ -291,6 +291,70 @@ class ArcProcessor(DataProcessor):
         return examples
 
 
+class CosmosProcessor(DataProcessor):
+    """Processor for the CosmosQA data set."""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} train".format(data_dir))
+        return self._create_examples(self._read_json(os.path.join(data_dir, "train.jsonl")), "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} dev".format(data_dir))
+        return self._create_examples(self._read_json(os.path.join(data_dir, "dev.jsonl")), "dev")
+
+    def get_test_examples(self, data_dir):
+        logger.info("LOOKING AT {} test".format(data_dir))
+        return self._create_examples(self._read_json(os.path.join(data_dir, "test.jsonl")), "test")
+
+    def get_labels(self):
+        """See base class."""
+        return ["0", "1", "2", "3"]
+
+    def _read_json(self, input_file):
+        with open(input_file, "r", encoding="utf-8") as fin:
+            lines = fin.readlines()
+            return lines
+
+    def _create_examples(self, lines, type):
+        """Creates examples for the training and dev sets."""
+
+        examples = []
+
+        # we deleted example which has more than or less than four choices
+        for line in tqdm.tqdm(lines, desc="read cosmosqa data"):
+            data_raw = json.loads(line.strip("\n"))
+            if 'label' in data_raw:
+                truth = data_raw["label"]
+            else:
+                truth = '0' # TODO
+
+            examples.append(
+                InputExample(
+                    example_id=data_raw["id"],
+                    question=data_raw["question"],
+                    contexts=[
+                        data_raw['context'],
+                        data_raw['context'],
+                        data_raw['context'],
+                        data_raw['context'],
+
+                    ],
+                    endings=[data_raw['answer0'], data_raw['answer1'], data_raw['answer2'], data_raw['answer3']],
+                    label=truth,
+                )
+            )
+
+        if type == "train":
+            assert len(examples) > 1
+            assert examples[0].label is not None
+        logger.info("len examples: %s}", str(len(examples)))
+
+        return examples
+
+
+
 def convert_examples_to_features(
     examples: List[InputExample],
     label_list: List[str],
@@ -367,7 +431,7 @@ def convert_examples_to_features(
     return features
 
 
-processors = {"race": RaceProcessor, "swag": SwagProcessor, "arc": ArcProcessor}
+processors = {"race": RaceProcessor, "swag": SwagProcessor, "arc": ArcProcessor, "cosmos": CosmosProcessor}
 
 
-MULTIPLE_CHOICE_TASKS_NUM_LABELS = {"race", 4, "swag", 4, "arc", 4}
+MULTIPLE_CHOICE_TASKS_NUM_LABELS = {"race", 4, "swag", 4, "arc", 4, "cosmos", 4}

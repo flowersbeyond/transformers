@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Finetuning the library models for multiple choice (Bert, Roberta, XLNet)."""
+""" Finetuning the library models for multiple choice (Bert, Roberta, XLNet, Albert)."""
 
 
 import argparse
@@ -40,6 +40,9 @@ from transformers import (
     XLNetConfig,
     XLNetForMultipleChoice,
     XLNetTokenizer,
+    AlbertConfig,
+    AlbertForMultipleChoice,
+    AlbertTokenizer,
     get_linear_schedule_with_warmup,
 )
 from utils_multiple_choice import convert_examples_to_features, processors
@@ -54,13 +57,14 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 ALL_MODELS = sum(
-    (tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig, XLNetConfig, RobertaConfig)), ()
+    (tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig, XLNetConfig, RobertaConfig, AlbertConfig)), ()
 )
 
 MODEL_CLASSES = {
     "bert": (BertConfig, BertForMultipleChoice, BertTokenizer),
     "xlnet": (XLNetConfig, XLNetForMultipleChoice, XLNetTokenizer),
     "roberta": (RobertaConfig, RobertaForMultipleChoice, RobertaTokenizer),
+    "albert": (AlbertConfig, AlbertForMultipleChoice, AlbertTokenizer)
 }
 
 
@@ -155,7 +159,7 @@ def train(args, train_dataset, model, tokenizer):
                 "input_ids": batch[0],
                 "attention_mask": batch[1],
                 "token_type_ids": batch[2]
-                if args.model_type in ["bert", "xlnet"]
+                if args.model_type in ["bert", "xlnet", "albert"]
                 else None,  # XLM don't use segment_ids
                 "labels": batch[3],
             }
@@ -276,7 +280,7 @@ def evaluate(args, model, tokenizer, prefix="", test=False):
                     "input_ids": batch[0],
                     "attention_mask": batch[1],
                     "token_type_ids": batch[2]
-                    if args.model_type in ["bert", "xlnet"]
+                    if args.model_type in ["bert", "xlnet", "albert"]
                     else None,  # XLM don't use segment_ids
                     "labels": batch[3],
                 }
