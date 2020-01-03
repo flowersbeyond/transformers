@@ -355,6 +355,86 @@ class CosmosProcessor(DataProcessor):
 
 
 
+class SocialIQAProcessor(DataProcessor):
+    """Processor for the CosmosQA data set."""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} train".format(data_dir))
+        return self._create_examples(self._read_json(os.path.join(data_dir, "train.jsonl")),
+                                     self._read_txt(os.path.join(data_dir, "train-labels.lst")),
+                                     "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} dev".format(data_dir))
+        return self._create_examples(self._read_json(os.path.join(data_dir, "dev.jsonl")),
+                                     self._read_txt(os.path.join(data_dir, "dev-labels.lst")),
+                                     "dev")
+
+    #TODO: social iqa does not have test data
+    def get_test_examples(self, data_dir):
+        logger.info("LOOKING AT {} test".format(data_dir))
+        return None #self._create_examples(self._read_json(os.path.join(data_dir, "test.jsonl")), "test")
+
+    def get_labels(self):
+        """See base class."""
+        return ["0","1", "2"]
+
+    def _read_json(self, input_file):
+        with open(input_file, "r", encoding="utf-8") as fin:
+            lines = fin.readlines()
+            return lines
+    def _read_txt(self, input_file):
+        with open(input_file, "r", encoding="utf-8") as fin:
+            lines = fin.readlines()
+            return lines
+
+    def _create_examples(self, data_lines, label_lines, type):
+        """Creates examples for the training and dev sets."""
+        examples = []
+
+        qlist = []
+        assert len(data_lines) == len(label_lines)
+
+        for i in range(0, len(data_lines)):
+            q_data = json.loads(data_lines[i].strip())
+            q_data["label"] = label_lines[i].strip()
+            q_data["id"] = "SIQA_" + str(i)
+            qlist.append(q_data)
+
+
+        for data_raw in tqdm.tqdm(qlist, desc="read socialIQA data"):
+            if 'label' in data_raw:
+                truth = data_raw["label"]
+            else:
+                truth = '0' # TODO
+
+            examples.append(
+                InputExample(
+                    example_id=data_raw["id"],
+                    question=data_raw["question"],
+                    contexts=[
+                        data_raw['context'],
+                        data_raw['context'],
+                        data_raw['context'],
+                    ],
+                    endings=[data_raw['answerA'], data_raw['answerB'], data_raw['answerC']],
+                    label=str(ord(truth) - ord("1")),
+                )
+            )
+
+        if type == "train":
+            assert len(examples) > 1
+            assert examples[0].label is not None
+        logger.info("len examples: %s}", str(len(examples)))
+
+        return examples
+
+
+
+
+
 def convert_examples_to_features(
     examples: List[InputExample],
     label_list: List[str],
@@ -431,7 +511,7 @@ def convert_examples_to_features(
     return features
 
 
-processors = {"race": RaceProcessor, "swag": SwagProcessor, "arc": ArcProcessor, "cosmos": CosmosProcessor}
+processors = {"race": RaceProcessor, "swag": SwagProcessor, "arc": ArcProcessor, "cosmos": CosmosProcessor, "siqa": SocialIQAProcessor}
 
 
-MULTIPLE_CHOICE_TASKS_NUM_LABELS = {"race", 4, "swag", 4, "arc", 4, "cosmos", 4}
+MULTIPLE_CHOICE_TASKS_NUM_LABELS = {"race", 4, "swag", 4, "arc", 4, "cosmos", 4, "siqa", 3}
