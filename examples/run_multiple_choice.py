@@ -299,6 +299,7 @@ def evaluate(args, model, tokenizer, prefix="", test=False):
 
         eval_loss = eval_loss / nb_eval_steps
         preds = np.argmax(preds, axis=1)
+
         acc = simple_accuracy(preds, out_label_ids)
         result = {"eval_acc": acc, "eval_loss": eval_loss}
         results.update(result)
@@ -322,6 +323,12 @@ def evaluate(args, model, tokenizer, prefix="", test=False):
             for key in sorted(result.keys()):
                 logger.info("  %s = %s", key, str(result[key]))
                 writer.write("%s = %s\n" % (key, str(result[key])))
+
+        output_eval_pred_result_file = os.path.join(eval_output_dir, "is_test_" + str(test).lower() + "_predictions.txt")
+        with open(output_eval_pred_result_file, "w") as writer:
+            for pred in preds:
+                writer.write(str(pred) + '\n')
+
     return results
 
 
