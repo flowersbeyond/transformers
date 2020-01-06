@@ -354,7 +354,6 @@ class CosmosProcessor(DataProcessor):
         return examples
 
 
-
 class SocialIQAProcessor(DataProcessor):
     """Processor for the CosmosQA data set."""
 
@@ -430,6 +429,67 @@ class SocialIQAProcessor(DataProcessor):
         logger.info("len examples: %s}", str(len(examples)))
 
         return examples
+
+
+
+
+class McTacoProcessor(DataProcessor):
+    """Processor for the CosmosQA data set."""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} train".format(data_dir))
+        # mctaco does not have train examples. we can only use dev examples for training
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, "dev_3783.tsv")), "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        logger.info("LOOKING AT {} dev".format(data_dir))
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, "dev_3783.tsv")), "dev")
+
+    #TODO: social iqa does not have test data
+    def get_test_examples(self, data_dir):
+        logger.info("LOOKING AT {} test".format(data_dir))
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, "test_9442.tsv")), "test")
+
+    def get_labels(self):
+        """See base class."""
+        return ["0","1"]
+
+    def _read_tsv(self, input_file):
+        with open(input_file, "r", encoding="utf-8") as fin:
+            lines = fin.readlines()
+            return lines
+
+    def _create_examples(self, lines, type):
+        """Creates examples for the training and dev sets."""
+        examples = []
+        id = 0
+        for line in tqdm.tqdm(lines, desc="read McTaco data"):
+
+            cols = line.strip().split('\t')
+
+            examples.append(
+                InputExample(
+                    example_id=str(id),
+                    question=cols[1] + ' [CLS] ' + cols[2], # TODO
+                    contexts=[
+                        cols[0],
+                        cols[0],
+                    ],
+                    endings=['yes', 'no'],
+                    label= '0' if cols[3] == 'yes' else '1',
+                )
+            )
+            id += 1
+
+        if type == "train":
+            assert len(examples) > 1
+            assert examples[0].label is not None
+        logger.info("len examples: %s}", str(len(examples)))
+
+        return examples
+
 
 
 
@@ -511,7 +571,8 @@ def convert_examples_to_features(
     return features
 
 
-processors = {"race": RaceProcessor, "swag": SwagProcessor, "arc": ArcProcessor, "cosmos": CosmosProcessor, "siqa": SocialIQAProcessor}
+processors = {"race": RaceProcessor, "swag": SwagProcessor, "arc": ArcProcessor, "cosmos": CosmosProcessor,
+              "siqa": SocialIQAProcessor, "mctaco": McTacoProcessor}
 
 
-MULTIPLE_CHOICE_TASKS_NUM_LABELS = {"race", 4, "swag", 4, "arc", 4, "cosmos", 4, "siqa", 3}
+MULTIPLE_CHOICE_TASKS_NUM_LABELS = {"race", 4, "swag", 4, "arc", 4, "cosmos", 4, "siqa", 3, "mctaco", 2}
