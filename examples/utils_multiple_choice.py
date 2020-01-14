@@ -440,12 +440,13 @@ class McTacoProcessor(DataProcessor):
         """See base class."""
         logger.info("LOOKING AT {} train".format(data_dir))
         # mctaco does not have train examples. we can only use dev examples for training
-        return self._create_examples(self._read_tsv(os.path.join(data_dir, "dev_3783.tsv")), "train")
+        # we modify this to "train.tsv" since we split the dev set into 2 splits.
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, "train.tsv")), "train")
 
     def get_dev_examples(self, data_dir):
         """See base class."""
         logger.info("LOOKING AT {} dev".format(data_dir))
-        return self._create_examples(self._read_tsv(os.path.join(data_dir, "dev_3783.tsv")), "dev")
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, "dev.tsv")), "dev")
 
     #TODO: social iqa does not have test data
     def get_test_examples(self, data_dir):
